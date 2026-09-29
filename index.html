@@ -1,0 +1,625 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>PflanzenApp ROI-Kalkulator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: two-column calculator, inputs left · results right */
+:root {
+  --bg: #f4f6f2;
+  --surface: #ffffff;
+  --surface2: #eef1eb;
+  --fg: #18231a;
+  --muted: #697063;
+  --accent: #2f7a40;
+  --accent-light: #e4f0e7;
+  --accent-dim: #5fa870;
+  --positive: #1e8a45;
+  --warn: #bc3325;
+  --warn-light: #fde9e7;
+  --border: #d8e0d4;
+  --font-display: 'Fraunces', Georgia, serif;
+  --font-body: 'Inter', system-ui, sans-serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #111a12;
+    --surface: #1a271c;
+    --surface2: #202e22;
+    --fg: #e2ebe4;
+    --muted: #8a9e8c;
+    --accent: #5dbf72;
+    --accent-light: #1b3020;
+    --accent-dim: #4aa85e;
+    --positive: #4cbb73;
+    --warn: #e06050;
+    --warn-light: #2e1210;
+    --border: #2d3e2f;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #111a12;
+  --surface: #1a271c;
+  --surface2: #202e22;
+  --fg: #e2ebe4;
+  --muted: #8a9e8c;
+  --accent: #5dbf72;
+  --accent-light: #1b3020;
+  --accent-dim: #4aa85e;
+  --positive: #4cbb73;
+  --warn: #e06050;
+  --warn-light: #2e1210;
+  --border: #2d3e2f;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  margin: 0;
+  padding: 0 20px;
+  padding-block: 28px 48px;
+  max-width: 960px;
+  margin-inline: auto;
+}
+
+/* Header */
+.hd {
+  margin-bottom: 28px;
+}
+.hd h1 {
+  font-family: var(--font-display);
+  font-size: clamp(1.45rem, 3.5vw, 2rem);
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0 0 5px;
+  text-wrap: balance;
+}
+.hd p {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin: 0 0 10px;
+}
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 3px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+/* Two-column grid */
+.grid2 {
+  display: grid;
+  grid-template-columns: 340px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+@media (max-width: 680px) {
+  .grid2 { grid-template-columns: 1fr; }
+}
+
+/* Cards */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+}
+
+.eyebrow {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+
+/* Sliders */
+.slider-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+.sg label {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 0.82rem;
+  color: var(--fg);
+  margin-bottom: 5px;
+}
+.sg .val {
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--accent);
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+  cursor: pointer;
+  height: 4px;
+}
+.hint {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+.div { border: none; border-top: 1px solid var(--border); margin: 18px 0; }
+
+/* Costs breakdown */
+.costs { font-size: 0.78rem; display: flex; flex-direction: column; gap: 7px; }
+.cr { display: flex; justify-content: space-between; }
+.cr .cl { color: var(--muted); }
+.cr .cv { font-weight: 600; font-variant-numeric: tabular-nums; }
+.cr.total { border-top: 1px solid var(--border); padding-top: 7px; }
+.cr.total .cl, .cr.total .cv { color: var(--fg); font-weight: 700; }
+
+/* Break-even hero */
+.be-hero {
+  text-align: center;
+  background: var(--accent-light);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 22px 20px;
+  margin-bottom: 16px;
+}
+.be-hero .be-label {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+.be-hero .be-num {
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 5vw, 2.8rem);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+  line-height: 1;
+}
+.be-hero .be-sub {
+  font-size: 0.77rem;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+/* Result stats grid */
+.stats2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.stat {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 11px 13px;
+  min-width: 0;
+}
+.stat .slabel {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 3px;
+}
+.stat .sval {
+  font-size: 1.15rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--fg);
+}
+.stat.green .sval { color: var(--positive); }
+.stat.red .sval { color: var(--warn); }
+.stat.accent .sval { color: var(--accent); }
+
+/* Tier table */
+.tier-table {
+  font-size: 0.77rem;
+  width: 100%;
+  border-collapse: collapse;
+}
+.tier-table td {
+  padding: 5px 8px;
+  border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.tier-table td:last-child { text-align: right; font-weight: 600; }
+.tier-table tr.active td {
+  background: var(--accent-light);
+  color: var(--accent);
+  font-weight: 700;
+}
+.tier-table tr:last-child td { border-bottom: none; }
+.note { font-size: 0.7rem; color: var(--muted); line-height: 1.5; margin-top: 8px; }
+
+/* Chart */
+.chart-wrap {
+  margin-top: 20px;
+  grid-column: 1 / -1;
+}
+canvas#chart {
+  display: block;
+  width: 100%;
+  height: 200px;
+}
+</style>
+
+<div class="hd">
+  <h1>🌿 PflanzenApp – ROI-Kalkulator</h1>
+  <p>Jahres-Abo · plant.id API (Kindwise) · Apple & Google Store</p>
+  <span class="badge">Kindwise-Preise Sept. 2026 · plant.id</span>
+</div>
+
+<div class="grid2">
+
+  <!-- LEFT: INPUTS -->
+  <div class="card">
+    <p class="eyebrow">Parameter</p>
+    <div class="slider-stack">
+
+      <div class="sg">
+        <label>App-Preis / Jahr <span class="val" id="d-price">€20</span></label>
+        <input type="range" id="price" min="5" max="60" step="1" value="20">
+        <div class="hint">Jahres-Abo für den Endnutzer</div>
+      </div>
+
+      <div class="sg">
+        <label>Scans / Nutzer / Monat <span class="val" id="d-scans">5</span></label>
+        <input type="range" id="scans" min="1" max="30" step="1" value="5">
+        <div class="hint">Ø plant.id-Aufrufe pro aktivem Nutzer</div>
+      </div>
+
+      <div class="sg">
+        <label>Store-Provision <span class="val" id="d-fee">15 %</span></label>
+        <input type="range" id="fee" min="15" max="30" step="15" value="15">
+        <div class="hint">15 % Small Business · 30 % Standard</div>
+      </div>
+
+      <div class="sg">
+        <label>Werbeetat / Jahr <span class="val" id="d-ads">€500</span></label>
+        <input type="range" id="ads" min="0" max="5000" step="100" value="500">
+        <div class="hint">App Store Ads, Instagram, Google UAC …</div>
+      </div>
+
+      <div class="sg">
+        <label>Zielkunden (Szenario) <span class="val" id="d-target">1.000</span></label>
+        <input type="range" id="target" min="100" max="5000" step="100" value="1000">
+        <div class="hint">Ertrag bei N zahlenden Kunden</div>
+      </div>
+
+    </div>
+
+    <div class="div"></div>
+    <p class="eyebrow">Fixkosten / Jahr</p>
+    <div class="costs">
+      <div class="cr"><span class="cl">Apple Developer Account</span><span class="cv">€99</span></div>
+      <div class="cr"><span class="cl">Google Play (anteilig p.a.)</span><span class="cv">€5</span></div>
+      <div class="cr"><span class="cl">Werbeetat</span><span class="cv" id="fx-ads">€500</span></div>
+      <div class="cr"><span class="cl">Hosting / Sonstiges</span><span class="cv">€120</span></div>
+      <div class="cr total"><span class="cl">Fixkosten gesamt</span><span class="cv" id="fx-total">€724</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: RESULTS -->
+  <div>
+    <div class="be-hero">
+      <div class="be-label">Break-even erreicht ab</div>
+      <div class="be-num" id="be-num">–</div>
+      <div class="be-sub" id="be-sub">Kunden decken alle Fixkosten</div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <p class="eyebrow">Pro Kunde / Jahr</p>
+      <div class="stats2">
+        <div class="stat accent">
+          <div class="slabel">Netto-Einnahme</div>
+          <div class="sval" id="r-rev">–</div>
+        </div>
+        <div class="stat">
+          <div class="slabel">Store-Provision</div>
+          <div class="sval" id="r-storefee">–</div>
+        </div>
+        <div class="stat">
+          <div class="slabel">API-Kosten</div>
+          <div class="sval" id="r-api">–</div>
+        </div>
+        <div class="stat green" id="margin-stat">
+          <div class="slabel">Marge / Kunde</div>
+          <div class="sval" id="r-margin">–</div>
+        </div>
+      </div>
+
+      <p class="eyebrow" style="margin-top:4px">Bei <span id="tl">1.000</span> Kunden</p>
+      <div class="stats2">
+        <div class="stat accent">
+          <div class="slabel">Umsatz (netto)</div>
+          <div class="sval" id="rn-rev">–</div>
+        </div>
+        <div class="stat">
+          <div class="slabel">API-Kosten (gesamt)</div>
+          <div class="sval" id="rn-api">–</div>
+        </div>
+        <div class="stat">
+          <div class="slabel">Aktiver API-Tarif</div>
+          <div class="sval" id="rn-tier">–</div>
+        </div>
+        <div class="stat green" id="profit-stat">
+          <div class="slabel">Jahresgewinn</div>
+          <div class="sval" id="rn-profit">–</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <p class="eyebrow">plant.id API-Tarife (Kindwise)</p>
+      <table class="tier-table" id="ttable">
+        <tbody>
+          <tr data-min="1000"    data-max="9999">   <td>ab 1.000 Credits</td>   <td>€ 0,05 / Scan</td></tr>
+          <tr data-min="10000"   data-max="49999">  <td>ab 10.000 Credits</td>  <td>€ 0,03 / Scan</td></tr>
+          <tr data-min="50000"   data-max="199999"> <td>ab 50.000 Credits</td>  <td>€ 0,02 / Scan</td></tr>
+          <tr data-min="200000"  data-max="799999"> <td>ab 200.000 Credits</td> <td>€ 0,015 / Scan</td></tr>
+          <tr data-min="800000"  data-max="1499999"><td>ab 800.000 Credits</td> <td>€ 0,012 / Scan</td></tr>
+          <tr data-min="1500000" data-max="999999999"><td>ab 1.500.000 Credits</td><td>€ 0,010 / Scan</td></tr>
+        </tbody>
+      </table>
+      <p class="note">1 Credit = 1 Identifikationsanfrage. Pakete ab 30.000 Credits gültig 3 Monate. Quelle: kindwise.com/pricing</p>
+    </div>
+  </div>
+
+  <!-- CHART full width -->
+  <div class="card chart-wrap">
+    <p class="eyebrow">Gewinnkurve – Kunden → Jahresertrag</p>
+    <canvas id="chart"></canvas>
+    <p class="note" id="chart-note"></p>
+  </div>
+
+</div>
+
+<script>
+const TIERS = [
+  { min: 1500000, rate: 0.010 },
+  { min: 800000,  rate: 0.012 },
+  { min: 200000,  rate: 0.015 },
+  { min: 50000,   rate: 0.020 },
+  { min: 10000,   rate: 0.030 },
+  { min: 0,       rate: 0.050 },
+];
+const FIXED_BASE = 99 + 5 + 120; // Apple + Google + Hosting
+
+function getRate(calls) {
+  for (const t of TIERS) if (calls >= t.min) return t.rate;
+  return 0.05;
+}
+
+function eur(n, dec=0) {
+  if (n == null || isNaN(n)) return '–';
+  const abs = Math.abs(n);
+  const s = abs.toLocaleString('de-DE', { minimumFractionDigits: dec, maximumFractionDigits: dec });
+  return (n < 0 ? '−€ ' : '€ ') + s;
+}
+
+function vals() {
+  return {
+    price: +document.getElementById('price').value,
+    scans: +document.getElementById('scans').value,
+    fee:   +document.getElementById('fee').value / 100,
+    ads:   +document.getElementById('ads').value,
+    target:+document.getElementById('target').value,
+  };
+}
+
+function calc() {
+  const { price, scans, fee, ads, target } = vals();
+  const fixed = FIXED_BASE + ads;
+
+  // Per-customer metrics at target volume
+  const totalCalls = target * scans * 12;
+  const rate = getRate(totalCalls);
+  const apiPerCust = scans * 12 * rate;
+  const storePerCust = price * fee;
+  const revPerCust = price - storePerCust;
+  const marginPerCust = revPerCust - apiPerCust;
+
+  // Breakeven
+  const be = marginPerCust > 0 ? Math.ceil(fixed / marginPerCust) : null;
+
+  // At N customers
+  const revN  = target * price * (1 - fee);
+  const apiN  = totalCalls * rate;
+  const profN = revN - apiN - fixed;
+
+  // DOM
+  document.getElementById('be-num').textContent = be != null
+    ? be.toLocaleString('de-DE') + (be === 1 ? ' Kunde' : ' Kunden')
+    : 'nicht erreichbar';
+  document.getElementById('be-sub').textContent = be != null
+    ? `Fixkosten von ${eur(fixed)} gedeckt`
+    : 'Marge zu gering für Fixkostendeckung';
+
+  document.getElementById('r-rev').textContent = eur(revPerCust, 2);
+  document.getElementById('r-storefee').textContent = eur(storePerCust, 2);
+  document.getElementById('r-api').textContent = eur(apiPerCust, 2);
+  document.getElementById('r-margin').textContent = eur(marginPerCust, 2);
+  const mStat = document.getElementById('margin-stat');
+  mStat.className = 'stat ' + (marginPerCust >= 0 ? 'green' : 'red');
+
+  document.getElementById('tl').textContent = target.toLocaleString('de-DE');
+  document.getElementById('rn-rev').textContent = eur(revN);
+  document.getElementById('rn-api').textContent = eur(apiN);
+  document.getElementById('rn-tier').textContent = '€ ' + rate.toFixed(3).replace('.',',') + ' / Scan';
+  document.getElementById('rn-profit').textContent = eur(profN);
+  const pStat = document.getElementById('profit-stat');
+  pStat.className = 'stat ' + (profN >= 0 ? 'green' : 'red');
+
+  document.getElementById('fx-ads').textContent = eur(ads);
+  document.getElementById('fx-total').textContent = eur(fixed);
+
+  // Tier highlight
+  document.querySelectorAll('#ttable tr').forEach(tr => {
+    const mn = +tr.dataset.min, mx = +tr.dataset.max;
+    tr.classList.toggle('active', totalCalls >= mn && totalCalls <= mx);
+  });
+
+  drawChart(price, scans, fee, fixed, target);
+}
+
+function drawChart(price, scans, fee, fixed, target) {
+  const canvas = document.getElementById('chart');
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  canvas.width = W * dpr; canvas.height = H * dpr;
+  const ctx = canvas.getContext('2d');
+  ctx.scale(dpr, dpr);
+
+  const st = getComputedStyle(document.documentElement);
+  const C = {
+    fg:      st.getPropertyValue('--fg').trim(),
+    muted:   st.getPropertyValue('--muted').trim(),
+    accent:  st.getPropertyValue('--accent').trim(),
+    pos:     st.getPropertyValue('--positive').trim(),
+    warn:    st.getPropertyValue('--warn').trim(),
+    border:  st.getPropertyValue('--border').trim(),
+    surf:    st.getPropertyValue('--surface').trim(),
+  };
+
+  const MAX = 2500, STEPS = 100;
+  const pts = [];
+  for (let i = 0; i <= STEPS; i++) {
+    const c = Math.round((MAX / STEPS) * i);
+    const calls = c * scans * 12;
+    const r = getRate(calls);
+    const profit = c * price * (1 - fee) - calls * r - fixed;
+    pts.push({ c, profit });
+  }
+
+  const pMin = Math.min(...pts.map(d => d.profit));
+  const pMax = Math.max(...pts.map(d => d.profit));
+  const pRange = pMax - pMin || 1;
+
+  const pad = { t: 14, r: 14, b: 32, l: 62 };
+  const cw = W - pad.l - pad.r, ch = H - pad.t - pad.b;
+
+  function xp(c) { return pad.l + (c / MAX) * cw; }
+  function yp(p) { return pad.t + ch - ((p - pMin) / pRange) * ch; }
+
+  // Grid lines
+  ctx.strokeStyle = C.border; ctx.lineWidth = 0.5;
+  for (let i = 0; i <= 4; i++) {
+    const y = pad.t + (ch / 4) * i;
+    ctx.beginPath(); ctx.moveTo(pad.l, y); ctx.lineTo(pad.l + cw, y); ctx.stroke();
+  }
+
+  // Zero line
+  const zy = yp(0);
+  if (zy >= pad.t && zy <= pad.t + ch) {
+    ctx.strokeStyle = C.muted; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+    ctx.beginPath(); ctx.moveTo(pad.l, zy); ctx.lineTo(pad.l + cw, zy); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  // Y axis labels
+  ctx.font = `10px ${st.getPropertyValue('--font-body')}`;
+  ctx.fillStyle = C.muted; ctx.textAlign = 'right';
+  const yVals = [pMin, 0, pMax];
+  yVals.forEach(v => {
+    const y = yp(v);
+    if (y < pad.t - 6 || y > pad.t + ch + 6) return;
+    const label = (v === 0 ? '±0' : (v > 0 ? '+' : '') + Math.round(v / 100) * 100 + ' €');
+    ctx.fillText(label, pad.l - 5, y + 4);
+  });
+
+  // X axis labels
+  ctx.textAlign = 'center'; ctx.fillStyle = C.muted;
+  [0, 500, 1000, 1500, 2000, 2500].forEach(c => {
+    ctx.fillText(c.toLocaleString('de-DE'), xp(c), H - pad.b + 14);
+  });
+  ctx.fillStyle = C.muted;
+  ctx.fillText('Kunden', pad.l + cw / 2, H - 2);
+
+  // Loss fill
+  ctx.beginPath();
+  ctx.moveTo(xp(pts[0].c), yp(0));
+  pts.forEach(d => ctx.lineTo(xp(d.c), yp(Math.min(d.profit, 0))));
+  ctx.lineTo(xp(pts[pts.length-1].c), yp(0));
+  ctx.closePath();
+  ctx.fillStyle = C.warn + '28'; ctx.fill();
+
+  // Gain fill
+  ctx.beginPath();
+  ctx.moveTo(xp(pts[0].c), yp(0));
+  pts.forEach(d => ctx.lineTo(xp(d.c), yp(Math.max(d.profit, 0))));
+  ctx.lineTo(xp(pts[pts.length-1].c), yp(0));
+  ctx.closePath();
+  ctx.fillStyle = C.pos + '22'; ctx.fill();
+
+  // Profit line
+  ctx.beginPath();
+  pts.forEach((d, i) => { i ? ctx.lineTo(xp(d.c), yp(d.profit)) : ctx.moveTo(xp(d.c), yp(d.profit)); });
+  ctx.strokeStyle = C.accent; ctx.lineWidth = 2.5; ctx.stroke();
+
+  // Break-even dot
+  for (let i = 1; i < pts.length; i++) {
+    if (pts[i-1].profit < 0 && pts[i].profit >= 0) {
+      const bx = xp(pts[i].c), by = yp(pts[i].profit);
+      ctx.beginPath(); ctx.arc(bx, by, 5, 0, Math.PI * 2);
+      ctx.fillStyle = C.pos; ctx.fill();
+      ctx.strokeStyle = C.surf; ctx.lineWidth = 2; ctx.stroke();
+      ctx.font = 'bold 10px Inter, sans-serif';
+      ctx.fillStyle = C.pos; ctx.textAlign = 'left';
+      ctx.fillText('Break-even ~' + pts[i].c.toLocaleString('de-DE') + ' Kunden', bx + 8, by + 4);
+      break;
+    }
+  }
+
+  // Target dot
+  const td = pts.find(d => d.c >= target) || pts[pts.length-1];
+  if (td) {
+    const tx = xp(target), ty = yp(td.profit);
+    ctx.beginPath(); ctx.arc(tx, ty, 5, 0, Math.PI * 2);
+    ctx.fillStyle = C.accent; ctx.fill();
+    ctx.strokeStyle = C.surf; ctx.lineWidth = 2; ctx.stroke();
+  }
+
+  // Y axis line
+  ctx.strokeStyle = C.border; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(pad.l, pad.t); ctx.lineTo(pad.l, pad.t + ch); ctx.stroke();
+}
+
+// Wire sliders
+[
+  ['price',  'price',  'd-price',  v => '€' + v],
+  ['scans',  'scans',  'd-scans',  v => v],
+  ['fee',    'fee',    'd-fee',    v => v + ' %'],
+  ['ads',    'ads',    'd-ads',    v => '€ ' + Number(v).toLocaleString('de-DE')],
+  ['target', 'target', 'd-target', v => Number(v).toLocaleString('de-DE')],
+].forEach(([,id, did, fmt]) => {
+  document.getElementById(id).addEventListener('input', () => {
+    document.getElementById(did).textContent = fmt(document.getElementById(id).value);
+    calc();
+  });
+});
+
+calc();
+let rt;
+window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(calc, 80); });
+</script>
+
+</body></html>
